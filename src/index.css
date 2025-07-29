@@ -2,41 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Athena Pocket Retro Terminal Design System
+All colors MUST be HSL for terminal aesthetic.
 */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Terminal Background Colors */
+    --background: 0 0% 5%;
+    --background-secondary: 0 0% 8%;
+    --background-tertiary: 0 0% 12%;
+    --foreground: 120 100% 75%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card Components */
+    --card: 0 0% 8%;
+    --card-foreground: 120 100% 75%;
+    --card-border: 120 100% 25%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Popover Components */
+    --popover: 0 0% 8%;
+    --popover-foreground: 120 100% 75%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary Terminal Green */
+    --primary: 120 100% 50%;
+    --primary-foreground: 0 0% 5%;
+    --primary-glow: 120 100% 75%;
+    --primary-dim: 120 100% 35%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary Terminal Colors */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 120 100% 75%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted Elements */
+    --muted: 0 0% 15%;
+    --muted-foreground: 120 50% 60%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent Colors */
+    --accent: 120 100% 25%;
+    --accent-foreground: 120 100% 75%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Error/Warning Colors */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Border and Input */
+    --border: 120 100% 25%;
+    --input: 0 0% 15%;
+    --input-border: 120 100% 35%;
+    --ring: 120 100% 50%;
 
-    --radius: 0.5rem;
+    /* Terminal Effects */
+    --terminal-glow: 120 100% 50%;
+    --terminal-shadow: 0 0 20px hsl(120 100% 50% / 0.5);
+    --cursor-blink: 120 100% 75%;
+    
+    /* Gradients */
+    --gradient-terminal: linear-gradient(135deg, hsl(120 100% 50% / 0.1), hsl(120 100% 25% / 0.1));
+    --gradient-glow: radial-gradient(circle, hsl(120 100% 50% / 0.3) 0%, transparent 70%);
+
+    --radius: 0.25rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +126,97 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Terminal Typography */
+  .font-terminal {
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  }
+
+  /* Terminal Effects */
+  .terminal-glow {
+    text-shadow: 0 0 10px hsl(var(--terminal-glow));
+    filter: drop-shadow(0 0 5px hsl(var(--terminal-glow) / 0.5));
+  }
+
+  .terminal-border {
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 0 10px hsl(var(--terminal-glow) / 0.3);
+  }
+
+  .terminal-scanlines::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        hsl(120 100% 50% / 0.03) 2px,
+        hsl(120 100% 50% / 0.03) 4px
+      );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Cursor Animation */
+  .cursor-blink::after {
+    content: '_';
+    color: hsl(var(--cursor-blink));
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Typing Animation */
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  .typing-animation {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid hsl(var(--cursor-blink));
+    animation: typing 3s steps(40, end), blink 1s infinite step-end;
+  }
+
+  /* Terminal Button Hover Effects */
+  .terminal-button {
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .terminal-button:hover {
+    box-shadow: 0 0 20px hsl(var(--terminal-glow) / 0.6);
+    transform: translateY(-2px);
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary-dim));
   }
 }
