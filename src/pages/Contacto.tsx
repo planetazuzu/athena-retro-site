@@ -10,14 +10,14 @@ const Contacto = () => {
       icon: Mail,
       title: "Email",
       description: "Para consultas generales y soporte",
-      contact: "hola@athenapocket.com",
+      contact: "athenapocket@proton.me",
       response: "Respuesta en 24h"
     },
     {
       icon: Phone,
       title: "Teléfono",
       description: "Para emergencias y soporte técnico",
-      contact: "+34 900 123 456",
+      contact: "+34 661 80 48 28",
       response: "Lun-Vie 9:00-18:00"
     },
     {
