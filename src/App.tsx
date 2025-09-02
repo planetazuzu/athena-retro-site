@@ -15,6 +15,7 @@ import Descargas from "./pages/Descargas";
 import Donaciones from "./pages/Donaciones";
 // import Comunidad from "./pages/Comunidad"; // Comentado porque el módulo no se encuentra
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Acerca from "./pages/Acerca";
 import Contacto from "./pages/Contacto";
 import Terminos from "./pages/Terminos";
@@ -22,6 +23,10 @@ import Privacidad from "./pages/Privacidad";
 import Admin from "./pages/Admin";
 import ComingSoon from "./pages/ComingSoon";
 import PaymentTest from "./pages/PaymentTest";
+import StripeTest from "./pages/StripeTest";
+import PayPalTest from "./pages/PayPalTest";
+import SubscriptionTest from "./pages/SubscriptionTest";
+import AdvancedDonationsTest from "./pages/AdvancedDonationsTest";
 import Comunidad from "./pages/Comunidad";
 import LoginForm from "./components/LoginForm";
 import NotFound from "./pages/NotFound";
@@ -51,6 +56,7 @@ const App = () => {
               <Route path="/donar" element={<Donaciones />} />
               <Route path="/comunidad" element={<Comunidad />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
               <Route path="/acerca" element={<Acerca />} />
               <Route path="/contacto" element={<Contacto />} />
               <Route path="/terminos" element={<Terminos />} />
@@ -62,7 +68,11 @@ const App = () => {
               } />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/app" element={<ComingSoon />} />
-              <Route path="/payment-test" element={<PaymentTest />} />
+                             <Route path="/payment-test" element={<PaymentTest />} />
+               <Route path="/stripe-test" element={<StripeTest />} />
+               <Route path="/paypal-test" element={<PayPalTest />} />
+               <Route path="/subscription-test" element={<SubscriptionTest />} />
+            <Route path="/donations-test" element={<AdvancedDonationsTest />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

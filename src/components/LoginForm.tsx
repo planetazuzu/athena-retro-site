@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,15 +9,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff, Lock, Mail, UserPlus, Shield } from "lucide-react";
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('planetazuzu@gmail.com'); // Email del admin por defecto
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
-  const { login, register } = useAuth();
+  const { login, register, user, isAdmin } = useAuth();
+
+  // Si ya está logueado, redirigir
+  useEffect(() => {
+    if (user) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +40,9 @@ const LoginForm = () => {
       if (isLogin) {
         const success = await login(email, password);
         if (success) {
-          setMessage('✅ Login exitoso!');
+          setMessage('✅ Login exitoso! Redirigiendo...');
           setMessageType('success');
-          // Redirigir o actualizar estado
+          // La redirección se maneja en el useEffect
         } else {
           setMessage('❌ Credenciales incorrectas o usuario no verificado');
           setMessageType('error');
@@ -53,6 +66,16 @@ const LoginForm = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setIsLogin(value === "login");
+    if (value === "login") {
+      setEmail('planetazuzu@gmail.com'); // Restaurar email del admin
+    } else {
+      setEmail(''); // Limpiar email para registro
+    }
+    setMessage(''); // Limpiar mensajes
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -73,12 +96,11 @@ const LoginForm = () => {
           </CardHeader>
           
           <CardContent>
-            <Tabs value={isLogin ? "login" : "register"} onValueChange={(value) => setIsLogin(value === "login")}>
+            <Tabs value={isLogin ? "login" : "register"} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger 
                   value="login" 
                   className="font-terminal"
-                  onClick={() => setIsLogin(true)}
                 >
                   <Lock className="h-4 w-4 mr-2" />
                   ADMIN
@@ -86,7 +108,6 @@ const LoginForm = () => {
                 <TabsTrigger 
                   value="register" 
                   className="font-terminal"
-                  onClick={() => setIsLogin(false)}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   USUARIO
@@ -101,15 +122,15 @@ const LoginForm = () => {
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                             <Input
-                         id="login-email"
-                         type="email"
-                         placeholder="planetazuzu@gmail.com"
-                         value={email}
-                         onChange={(e) => setEmail(e.target.value)}
-                         className="pl-10 font-terminal"
-                         required
-                       />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="planetazuzu@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 font-terminal"
+                        required
+                      />
                     </div>
                   </div>
 
@@ -142,6 +163,15 @@ const LoginForm = () => {
                         )}
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Información de credenciales */}
+                  <div className="bg-primary/10 border border-primary/20 rounded-sm p-3">
+                    <p className="text-xs text-primary font-terminal">
+                      🔑 <strong>Credenciales de Admin:</strong><br/>
+                      Email: planetazuzu@gmail.com<br/>
+                      Contraseña: 941259018a
+                    </p>
                   </div>
 
                   <Button 

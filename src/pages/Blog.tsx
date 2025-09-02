@@ -1,72 +1,24 @@
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Calendar, User, ArrowRight, Search, Filter } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Filter, Eye, ThumbsUp, ThumbsDown, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useBlog, BlogPost } from "@/hooks/useBlog";
 
 const Blog = () => {
-  const blogPosts = [
-    {
-      id: 1,
-      title: "10 Técnicas de Supervivencia que Salvan Vidas",
-      excerpt: "Descubre las técnicas más efectivas que han sido probadas en situaciones reales de emergencia...",
-      author: "Dr. María González",
-      date: "2024-01-15",
-      category: "Técnicas",
-      readTime: "8 min",
-      featured: true
-    },
-    {
-      id: 2,
-      title: "Cómo la IA Revoluciona la Supervivencia Moderna",
-      excerpt: "La inteligencia artificial está transformando la forma en que nos preparamos para emergencias...",
-      author: "Carlos Ruiz",
-      date: "2024-01-12",
-      category: "Tecnología",
-      readTime: "6 min",
-      featured: false
-    },
-    {
-      id: 3,
-      title: "Casos Reales: Rescate en Sierra Nevada",
-      excerpt: "Un relato detallado de cómo Athena Pocket ayudó en un rescate real en las montañas...",
-      author: "Equipo de Rescate",
-      date: "2024-01-10",
-      category: "Casos Reales",
-      readTime: "12 min",
-      featured: false
-    },
-    {
-      id: 4,
-      title: "Preparación para Emergencias en Zonas Urbanas",
-      excerpt: "Guía completa para sobrevivir en entornos urbanos durante crisis y desastres...",
-      author: "Ana Martínez",
-      date: "2024-01-08",
-      category: "Preparación",
-      readTime: "10 min",
-      featured: false
-    },
-    {
-      id: 5,
-      title: "Actualización de Athena Pocket v2.1",
-      excerpt: "Nuevas funciones de IA, mapas mejorados y mejor experiencia offline...",
-      author: "Equipo de Desarrollo",
-      date: "2024-01-05",
-      category: "Actualizaciones",
-      readTime: "4 min",
-      featured: false
-    },
-    {
-      id: 6,
-      title: "Primeros Auxilios en Situaciones Extremas",
-      excerpt: "Técnicas médicas básicas cuando no hay ayuda profesional disponible...",
-      author: "Dr. Juan Pérez",
-      date: "2024-01-03",
-      category: "Primeros Auxilios",
-      readTime: "15 min",
-      featured: false
-    }
-  ];
+  const { 
+    posts, 
+    loading, 
+    getPublishedPosts, 
+    getPostsByCategory, 
+    searchPosts,
+    incrementViews 
+  } = useBlog();
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Todas");
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
 
   const categories = [
     "Todas",
@@ -75,8 +27,54 @@ const Blog = () => {
     "Casos Reales",
     "Preparación",
     "Actualizaciones",
-    "Primeros Auxilios"
+    "Primeros Auxilios",
+    "Equipamiento",
+    "Entrenamiento"
   ];
+
+  // Filtrar posts basado en búsqueda y categoría
+  useEffect(() => {
+    let posts = getPublishedPosts();
+    
+    // Filtrar por categoría
+    if (selectedCategory !== "Todas") {
+      posts = getPostsByCategory(selectedCategory);
+    }
+    
+    // Filtrar por búsqueda
+    if (searchTerm.trim()) {
+      posts = searchPosts(searchTerm);
+    }
+    
+    setFilteredPosts(posts);
+  }, [searchTerm, selectedCategory, posts]);
+
+  const handlePostClick = (postId: string) => {
+    incrementViews(postId);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-primary font-terminal">Cargando blog...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const featuredPosts = filteredPosts.filter(post => post.featured);
+  const regularPosts = filteredPosts.filter(post => !post.featured);
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,92 +105,191 @@ const Blog = () => {
                 <input
                   type="text"
                   placeholder="Buscar artículos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-background-secondary border border-primary/20 rounded-sm font-terminal text-primary focus:border-primary focus:outline-none"
                 />
               </div>
               <div className="flex items-center space-x-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <select className="bg-background-secondary border border-primary/20 rounded-sm px-4 py-3 font-terminal text-primary focus:border-primary focus:outline-none">
+                <select 
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-background-secondary border border-primary/20 rounded-sm px-4 py-3 font-terminal text-primary focus:border-primary focus:outline-none"
+                >
                   {categories.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </div>
             </div>
+            
+            {/* Resultados de búsqueda */}
+            {searchTerm && (
+              <div className="text-center mb-6">
+                <p className="text-muted-foreground font-terminal">
+                  {filteredPosts.length} resultado{filteredPosts.length !== 1 ? 's' : ''} para "{searchTerm}"
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Featured Post */}
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {blogPosts.filter(post => post.featured).map((post) => (
-              <div key={post.id} className="bg-background-secondary border border-primary/20 rounded-sm p-8 terminal-border">
-                <div className="flex items-center space-x-4 mb-4">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-sm text-sm font-terminal">
-                    Destacado
-                  </span>
-                  <span className="text-sm text-muted-foreground font-terminal">{post.category}</span>
-                </div>
-                <h2 className="text-3xl font-bold text-primary font-terminal mb-4">{post.title}</h2>
-                <p className="text-muted-foreground font-terminal mb-6 text-lg">{post.excerpt}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground font-terminal">
-                    <div className="flex items-center space-x-1">
-                      <User className="h-4 w-4" />
-                      <span>{post.author}</span>
+      {/* Featured Posts */}
+      {featuredPosts.length > 0 && (
+        <section className="py-12 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-primary font-terminal mb-8 text-center">
+                ARTÍCULOS DESTACADOS
+              </h2>
+              {featuredPosts.map((post) => (
+                <div key={post.id} className="bg-background-secondary border border-primary/20 rounded-sm p-8 terminal-border mb-8">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <span className="bg-primary text-primary-foreground px-3 py-1 rounded-sm text-sm font-terminal">
+                      Destacado
+                    </span>
+                    <span className="text-sm text-muted-foreground font-terminal">{post.category}</span>
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Eye className="h-4 w-4" />
+                      <span>{post.views}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(post.date).toLocaleDateString('es-ES')}</span>
-                    </div>
-                    <span>{post.readTime}</span>
                   </div>
-                  <Button asChild variant="cta">
-                    <Link to={`/blog/${post.id}`}>
-                      Leer Más
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Link>
-                  </Button>
+                  <h2 className="text-3xl font-bold text-primary font-terminal mb-4">{post.title}</h2>
+                  <p className="text-muted-foreground font-terminal mb-6 text-lg">{post.excerpt}</p>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {post.tags.map((tag, index) => (
+                      <span key={index} className="bg-primary/20 text-primary px-2 py-1 rounded text-xs font-terminal">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground font-terminal">
+                      <div className="flex items-center space-x-1">
+                        <User className="h-4 w-4" />
+                        <span>{post.author}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{formatDate(post.createdAt)}</span>
+                      </div>
+                      <span>{post.readTime}</span>
+                      <div className="flex items-center space-x-2">
+                        <ThumbsUp className="h-4 w-4" />
+                        <span>{post.likes}</span>
+                        <ThumbsDown className="h-4 w-4" />
+                        <span>{post.dislikes}</span>
+                      </div>
+                    </div>
+                    <Button asChild variant="cta" onClick={() => handlePostClick(post.id)}>
+                      <Link to={`/blog/${post.id}`}>
+                        Leer Más
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Blog Posts Grid */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {blogPosts.filter(post => !post.featured).map((post) => (
-                <article key={post.id} className="bg-background-secondary border border-primary/20 rounded-sm p-6 terminal-border hover:border-primary/50 transition-all duration-300">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <span className="text-xs text-muted-foreground font-terminal">{post.category}</span>
-                    <span className="text-xs text-muted-foreground font-terminal">•</span>
-                    <span className="text-xs text-muted-foreground font-terminal">{post.readTime}</span>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-primary font-terminal mb-3 line-clamp-2">{post.title}</h3>
-                  <p className="text-muted-foreground font-terminal mb-4 line-clamp-3">{post.excerpt}</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground font-terminal">
-                      <User className="h-4 w-4" />
-                      <span>{post.author}</span>
-                    </div>
-                    <Button asChild variant="terminal" size="sm">
-                      <Link to={`/blog/${post.id}`}>
-                        Leer
-                        <ArrowRight className="h-3 w-3 ml-1" />
-                      </Link>
-                    </Button>
-                  </div>
-                </article>
-              ))}
-            </div>
+            {regularPosts.length > 0 ? (
+              <>
+                <h2 className="text-3xl font-bold text-primary font-terminal mb-12 text-center">
+                  {selectedCategory === "Todas" ? "TODOS LOS ARTÍCULOS" : `ARTÍCULOS DE ${selectedCategory.toUpperCase()}`}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {regularPosts.map((post) => (
+                    <article key={post.id} className="bg-background-secondary border border-primary/20 rounded-sm p-6 terminal-border hover:border-primary/50 transition-all duration-300">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <span className="text-xs text-muted-foreground font-terminal">{post.category}</span>
+                        <span className="text-xs text-muted-foreground font-terminal">•</span>
+                        <span className="text-xs text-muted-foreground font-terminal">{post.readTime}</span>
+                      </div>
+                      
+                      <h3 className="text-xl font-bold text-primary font-terminal mb-3 line-clamp-2">{post.title}</h3>
+                      <p className="text-muted-foreground font-terminal mb-4 line-clamp-3">{post.excerpt}</p>
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {post.tags.slice(0, 3).map((tag, index) => (
+                          <span key={index} className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-terminal">
+                            {tag}
+                          </span>
+                        ))}
+                        {post.tags.length > 3 && (
+                          <span className="text-xs text-muted-foreground font-terminal">
+                            +{post.tags.length - 3} más
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground font-terminal">
+                          <User className="h-4 w-4" />
+                          <span>{post.author}</span>
+                        </div>
+                        <Button asChild variant="terminal" size="sm" onClick={() => handlePostClick(post.id)}>
+                          <Link to={`/blog/${post.id}`}>
+                            Leer
+                            <ArrowRight className="h-3 w-3 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+                      
+                      {/* Stats */}
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary/10 text-xs text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <Eye className="h-3 w-3" />
+                          <span>{post.views}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <ThumbsUp className="h-3 w-3" />
+                          <span>{post.likes}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <ThumbsDown className="h-3 w-3" />
+                          <span>{post.dislikes}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">📝</div>
+                <h3 className="text-2xl font-bold text-primary font-terminal mb-4">
+                  No se encontraron artículos
+                </h3>
+                <p className="text-muted-foreground font-terminal mb-8">
+                  {searchTerm 
+                    ? `No hay artículos que coincidan con "${searchTerm}"`
+                    : `No hay artículos en la categoría "${selectedCategory}"`
+                  }
+                </p>
+                <Button 
+                  variant="terminal" 
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedCategory("Todas");
+                  }}
+                >
+                  Ver todos los artículos
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -238,6 +335,7 @@ const Blog = () => {
                 key={category}
                 variant="terminal"
                 className="font-terminal h-auto p-4 flex flex-col items-center space-y-2"
+                onClick={() => setSelectedCategory(category)}
               >
                 <span className="text-sm">{category}</span>
               </Button>

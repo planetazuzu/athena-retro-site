@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 interface User {
   id: string;
   email: string;
+  name?: string;
   role: 'admin' | 'user';
   isVerified: boolean;
   createdAt: Date;
@@ -22,8 +23,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Credenciales de admin (en producción esto debería estar en variables de entorno)
 const ADMIN_CREDENTIALS = {
-  email: 'planetazuzu@gmail.com', // Tu email real
-  password: '941259018a' // Tu contraseña real
+  email: 'planetazuzu@gmail.com',
+  password: '941259018a'
 };
 
 export const useAuth = () => {
@@ -44,16 +45,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const checkAuth = () => {
-    const storedUser = localStorage.getItem('athena_user');
-    if (storedUser) {
-      try {
+    try {
+      const storedUser = localStorage.getItem('athena_user');
+      if (storedUser) {
         const userData = JSON.parse(storedUser);
-        setUser(userData);
-      } catch (error) {
-        localStorage.removeItem('athena_user');
+        // Verificar que el usuario tenga la estructura correcta
+        if (userData.id && userData.email && userData.role) {
+          setUser(userData);
+        } else {
+          localStorage.removeItem('athena_user');
+        }
       }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      localStorage.removeItem('athena_user');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -65,6 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const adminUser: User = {
           id: 'admin-1',
           email: email,
+          name: 'Administrador',
           role: 'admin',
           isVerified: true,
           createdAt: new Date()
@@ -72,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setUser(adminUser);
         localStorage.setItem('athena_user', JSON.stringify(adminUser));
-        setIsLoading(false);
+        console.log('✅ Admin logueado exitosamente');
         return true;
       }
       
@@ -83,15 +92,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (existingUser && existingUser.isVerified) {
         setUser(existingUser);
         localStorage.setItem('athena_user', JSON.stringify(existingUser));
-        setIsLoading(false);
+        console.log('✅ Usuario logueado exitosamente');
         return true;
       }
       
-      setIsLoading(false);
+      console.log('❌ Login fallido: credenciales incorrectas o usuario no verificado');
       return false;
     } catch (error) {
-      setIsLoading(false);
+      console.error('Error en login:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,14 +115,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const existingUser = users.find((u: User) => u.email === email);
       
       if (existingUser) {
-        setIsLoading(false);
-        return false; // Email ya registrado
+        console.log('❌ Email ya registrado:', email);
+        return false;
       }
       
       // Crear nuevo usuario (no verificado)
       const newUser: User = {
         id: `user-${Date.now()}`,
         email: email,
+        name: email.split('@')[0], // Usar parte del email como nombre
         role: 'user',
         isVerified: false,
         createdAt: new Date()
@@ -125,15 +137,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log(`📧 Email de verificación enviado a: ${email}`);
       console.log('🔑 En producción, aquí se enviaría un email real');
       
-      setIsLoading(false);
       return true;
     } catch (error) {
-      setIsLoading(false);
+      console.error('Error en registro:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const logout = () => {
+    console.log('🚪 Usuario deslogueado');
     setUser(null);
     localStorage.removeItem('athena_user');
   };

@@ -17,42 +17,99 @@ import {
   Eye,
   Edit3,
   Save,
-  X
+  X,
+  Clock,
+  Calendar
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { BlogPost } from "@/hooks/useBlog";
 
-interface BlogPost {
-  id?: string;
-  title: string;
-  content: string;
-  excerpt: string;
-  tags: string[];
-  status: "draft" | "published" | "scheduled";
-  publishDate?: string;
-  metaTitle: string;
-  metaDescription: string;
-  featuredImage?: string;
+interface BlogEditorProps {
+  post?: BlogPost;
+  onSave: (post: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'likes' | 'dislikes'>) => void;
+  onCancel: () => void;
 }
 
-const BlogEditor = ({ post, onSave, onCancel }: { 
-  post?: BlogPost; 
-  onSave: (post: BlogPost) => void;
-  onCancel: () => void;
-}) => {
-  const [currentPost, setCurrentPost] = useState<BlogPost>(
-    post || {
+const BlogEditor = ({ post, onSave, onCancel }: BlogEditorProps) => {
+  const { user } = useAuth();
+  const [currentPost, setCurrentPost] = useState<Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'likes' | 'dislikes'>>(
+    post ? {
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+      tags: post.tags,
+      status: post.status,
+      publishDate: post.publishDate,
+      metaTitle: post.metaTitle,
+      metaDescription: post.metaDescription,
+      featuredImage: post.featuredImage,
+      author: post.author,
+      readTime: post.readTime,
+      category: post.category,
+      featured: post.featured
+    } : {
       title: "",
       content: "",
       excerpt: "",
       tags: [],
       status: "draft",
       metaTitle: "",
-      metaDescription: ""
+      metaDescription: "",
+      author: user?.name || "Admin",
+      readTime: "5 min",
+      category: "Técnicas",
+      featured: false
     }
   );
   const [newTag, setNewTag] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const categories = [
+    "Técnicas",
+    "Tecnología", 
+    "Casos Reales",
+    "Preparación",
+    "Actualizaciones",
+    "Primeros Auxilios",
+    "Equipamiento",
+    "Entrenamiento"
+  ];
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!currentPost.title.trim()) {
+      newErrors.title = "El título es obligatorio";
+    }
+    
+    if (!currentPost.content.trim()) {
+      newErrors.content = "El contenido es obligatorio";
+    }
+    
+    if (!currentPost.excerpt.trim()) {
+      newErrors.excerpt = "El resumen es obligatorio";
+    }
+    
+    if (!currentPost.metaTitle.trim()) {
+      newErrors.metaTitle = "El meta título es obligatorio";
+    }
+    
+    if (!currentPost.metaDescription.trim()) {
+      newErrors.metaDescription = "La meta descripción es obligatoria";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (validateForm()) {
+      onSave(currentPost);
+    }
+  };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !currentPost.tags.includes(newTag.trim())) {
+    if (newTag.trim() && !currentPost.tags.includes(newTag.trim()) && currentPost.tags.length < 5) {
       setCurrentPost({
         ...currentPost,
         tags: [...currentPost.tags, newTag.trim()]
@@ -100,6 +157,21 @@ const BlogEditor = ({ post, onSave, onCancel }: {
     { icon: Quote, action: () => insertMarkdown("> "), tooltip: "Cita" }
   ];
 
+  const calculateReadTime = (content: string) => {
+    const wordsPerMinute = 200;
+    const words = content.trim().split(/\s+/).length;
+    const minutes = Math.ceil(words / wordsPerMinute);
+    return `${minutes} min`;
+  };
+
+  const handleContentChange = (content: string) => {
+    setCurrentPost({
+      ...currentPost,
+      content,
+      readTime: calculateReadTime(content)
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -112,7 +184,7 @@ const BlogEditor = ({ post, onSave, onCancel }: {
             <X className="h-4 w-4 mr-2" />
             Cancelar
           </Button>
-          <Button onClick={() => onSave(currentPost)} className="font-terminal">
+          <Button onClick={handleSave} className="font-terminal">
             <Save className="h-4 w-4 mr-2" />
             Guardar
           </Button>
@@ -132,8 +204,9 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                 value={currentPost.title}
                 onChange={(e) => setCurrentPost({ ...currentPost, title: e.target.value })}
                 placeholder="Título del artículo..."
-                className="font-terminal"
+                className={`font-terminal ${errors.title ? 'border-red-500' : ''}`}
               />
+              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
             </CardContent>
           </Card>
 
@@ -172,10 +245,14 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                   <Textarea
                     id="content-editor"
                     value={currentPost.content}
-                    onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
+                    onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Escribe tu contenido en Markdown..."
-                    className="min-h-[400px] font-terminal"
+                    className={`min-h-[400px] font-terminal ${errors.content ? 'border-red-500' : ''}`}
                   />
+                  {errors.content && <p className="text-red-500 text-sm mt-1">{errors.content}</p>}
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Tiempo de lectura estimado: {currentPost.readTime}
+                  </div>
                 </TabsContent>
                 <TabsContent value="preview" className="mt-4">
                   <div className="min-h-[400px] p-4 bg-background-secondary border border-primary/20 rounded-sm font-terminal prose prose-invert max-w-none">
@@ -183,12 +260,12 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                       __html: currentPost.content
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/`(.*?)`/g, '<code>$1</code>')
-                        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-                        .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" />')
-                        .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
-                        .replace(/^- (.*$)/gm, '<ul><li>$1</li></ul>')
-                        .replace(/^(\d+)\. (.*$)/gm, '<ol><li>$2</li></ol>')
+                        .replace(/`(.*?)`/g, '<code class="bg-primary/20 px-1 rounded">$1</code>')
+                        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-primary hover:underline">$1</a>')
+                        .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto" />')
+                        .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-primary pl-4 italic">$1</blockquote>')
+                        .replace(/^- (.*$)/gm, '<ul class="list-disc pl-6"><li>$1</li></ul>')
+                        .replace(/^(\d+)\. (.*$)/gm, '<ol class="list-decimal pl-6"><li>$2</li></ol>')
                         .replace(/\n/g, '<br>')
                     }} />
                   </div>
@@ -232,10 +309,46 @@ const BlogEditor = ({ post, onSave, onCancel }: {
             </CardContent>
           </Card>
 
+          {/* Category */}
+          <Card className="terminal-border">
+            <CardHeader>
+              <CardTitle className="font-terminal">Categoría</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <select
+                value={currentPost.category}
+                onChange={(e) => setCurrentPost({ ...currentPost, category: e.target.value })}
+                className="w-full p-2 border border-primary/20 rounded-sm bg-background font-terminal"
+              >
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+
+          {/* Featured */}
+          <Card className="terminal-border">
+            <CardHeader>
+              <CardTitle className="font-terminal">Destacado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={currentPost.featured}
+                  onChange={(e) => setCurrentPost({ ...currentPost, featured: e.target.checked })}
+                  className="rounded border-primary/20"
+                />
+                <span className="font-terminal text-sm">Marcar como destacado</span>
+              </label>
+            </CardContent>
+          </Card>
+
           {/* Tags */}
           <Card className="terminal-border">
             <CardHeader>
-              <CardTitle className="font-terminal">Etiquetas</CardTitle>
+              <CardTitle className="font-terminal">Etiquetas ({currentPost.tags.length}/5)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -246,8 +359,9 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                     placeholder="Nueva etiqueta..."
                     className="font-terminal"
                     onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                    disabled={currentPost.tags.length >= 5}
                   />
-                  <Button onClick={handleAddTag} size="sm" className="font-terminal">
+                  <Button onClick={handleAddTag} size="sm" className="font-terminal" disabled={currentPost.tags.length >= 5}>
                     +
                   </Button>
                 </div>
@@ -282,8 +396,9 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                   value={currentPost.metaTitle}
                   onChange={(e) => setCurrentPost({ ...currentPost, metaTitle: e.target.value })}
                   placeholder="Título para SEO..."
-                  className="font-terminal"
+                  className={`font-terminal ${errors.metaTitle ? 'border-red-500' : ''}`}
                 />
+                {errors.metaTitle && <p className="text-red-500 text-sm mt-1">{errors.metaTitle}</p>}
               </div>
               <div>
                 <label className="text-sm font-medium text-primary font-terminal mb-2 block">
@@ -293,9 +408,10 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                   value={currentPost.metaDescription}
                   onChange={(e) => setCurrentPost({ ...currentPost, metaDescription: e.target.value })}
                   placeholder="Descripción para SEO..."
-                  className="font-terminal"
+                  className={`font-terminal ${errors.metaDescription ? 'border-red-500' : ''}`}
                   rows={3}
                 />
+                {errors.metaDescription && <p className="text-red-500 text-sm mt-1">{errors.metaDescription}</p>}
               </div>
             </CardContent>
           </Card>
@@ -310,9 +426,10 @@ const BlogEditor = ({ post, onSave, onCancel }: {
                 value={currentPost.excerpt}
                 onChange={(e) => setCurrentPost({ ...currentPost, excerpt: e.target.value })}
                 placeholder="Breve resumen del artículo..."
-                className="font-terminal"
+                className={`font-terminal ${errors.excerpt ? 'border-red-500' : ''}`}
                 rows={4}
               />
+              {errors.excerpt && <p className="text-red-500 text-sm mt-1">{errors.excerpt}</p>}
             </CardContent>
           </Card>
         </div>

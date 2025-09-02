@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,20 +14,24 @@ import {
   ArrowLeft,
   Clock,
   User,
-  Tag
+  Tag,
+  Edit,
+  Trash2,
+  MoreVertical,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  EyeOff,
+  Flag,
+  CheckCircle,
+  Activity
 } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-interface Reply {
-  id: string;
-  content: string;
-  author: string;
-  createdAt: string;
-  likes: number;
-  dislikes: number;
-  isAuthor: boolean;
-}
+import { useReplies, Reply as ReplyType } from '@/hooks/useReplies';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DiscussionDetailProps {
   discussion: any;
@@ -38,26 +42,45 @@ interface DiscussionDetailProps {
 const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps) => {
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [replies, setReplies] = useState<Reply[]>([
-    {
-      id: '1',
-      content: 'Excelente pregunta. Te recomiendo empezar con lo básico: agua, refugio, fuego y señalización.',
-      author: 'Carlos_Survival',
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 horas atrás
-      likes: 12,
-      dislikes: 1,
-      isAuthor: false
-    },
-    {
-      id: '2',
-      content: 'No olvides un buen cuchillo y una brújula. Son herramientas fundamentales.',
-      author: 'Maria_Guide',
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hora atrás
-      likes: 8,
-      dislikes: 0,
-      isAuthor: false
-    }
-  ]);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ReplyType | null>(null);
+  
+  // Nuevas funcionalidades
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'votes' | 'relevance'>('date');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showModerationTools, setShowModerationTools] = useState(false);
+
+  const { isAdmin } = useAuth();
+
+  // Usar el hook de respuestas con todas las funcionalidades
+  const { 
+    organizedReplies, 
+    isLoading, 
+    addReply, 
+    voteReply, 
+    deleteReply, 
+    editReply,
+    hideReply,
+    showReply,
+    reportReply,
+    unreportReply,
+    getModerationStats,
+    getActivityStats,
+    getUnreadCount,
+    markAsRead,
+    getLastVisitTime,
+    getPaginatedReplies,
+    getSearchStats
+  } = useReplies(discussion.id);
+
+  // Marcar como leído al abrir la discusión
+  useEffect(() => {
+    const now = Date.now();
+    markAsRead(now);
+  }, [discussion.id]);
 
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,21 +88,17 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
 
     setIsSubmitting(true);
     try {
-      const newReply: Reply = {
-        id: `reply-${Date.now()}`,
-        content: replyContent.trim(),
-        author: 'Usuario_Actual', // En producción sería el usuario autenticado
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        dislikes: 0,
-        isAuthor: true
-      };
-
-      setReplies([newReply, ...replies]);
-      setReplyContent('');
+      const parentReplyId = replyingTo?.id;
+      const newReply = await addReply(replyContent, parentReplyId);
       
-      // Aquí podrías guardar en localStorage o enviar a API
-      console.log('✅ Respuesta enviada:', newReply);
+      if (newReply) {
+        setReplyContent('');
+        setReplyingTo(null);
+        setShowReplyForm(false);
+        
+        // Llamar a la función del padre para actualizar contadores
+        onReply(replyContent);
+      }
       
     } catch (error) {
       console.error('Error sending reply:', error);
@@ -89,17 +108,68 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
   };
 
   const handleVote = (replyId: string, voteType: 'like' | 'dislike') => {
-    setReplies(prev => prev.map(reply => {
-      if (reply.id === replyId) {
-        if (voteType === 'like') {
-          return { ...reply, likes: reply.likes + 1 };
-        } else {
-          return { ...reply, dislikes: reply.dislikes + 1 };
-        }
-      }
-      return reply;
-    }));
+    voteReply(replyId, voteType);
   };
+
+  const handleEditReply = (reply: ReplyType) => {
+    setEditingReplyId(reply.id);
+    setEditContent(reply.content);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingReplyId || !editContent.trim()) return;
+    
+    const success = editReply(editingReplyId, editContent);
+    if (success) {
+      setEditingReplyId(null);
+      setEditContent('');
+    }
+  };
+
+  const handleDeleteReply = (replyId: string) => {
+    if (confirm('¿Estás seguro de que quieres eliminar esta respuesta?')) {
+      deleteReply(replyId);
+    }
+  };
+
+  const handleReplyToReply = (reply: ReplyType) => {
+    setReplyingTo(reply);
+    setShowReplyForm(true);
+    setReplyContent('');
+  };
+
+  // Funciones de moderación
+  const handleHideReply = (replyId: string) => {
+    if (!isAdmin) return;
+    if (confirm('¿Ocultar esta respuesta temporalmente?')) {
+      hideReply(replyId);
+    }
+  };
+
+  const handleShowReply = (replyId: string) => {
+    if (!isAdmin) return;
+    showReply(replyId);
+  };
+
+  const handleReportReply = (replyId: string) => {
+    if (!isAdmin) return;
+    if (confirm('¿Reportar esta respuesta como inapropiada?')) {
+      reportReply(replyId);
+    }
+  };
+
+  const handleUnreportReply = (replyId: string) => {
+    if (!isAdmin) return;
+    unreportReply(replyId);
+  };
+
+  // Obtener respuestas paginadas y filtradas
+  const { replies: paginatedReplies, pagination } = getPaginatedReplies(
+    currentPage, 
+    10, 
+    searchTerm, 
+    sortBy
+  );
 
   const formatDate = (dateString: string) => {
     try {
@@ -120,6 +190,205 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
       'equipamiento': 'EQUIPAMIENTO Y REVIEWS'
     };
     return categories[category] || category;
+  };
+
+  // Obtener estadísticas
+  const moderationStats = getModerationStats();
+  const activityStats = getActivityStats();
+  const searchStats = getSearchStats(searchTerm);
+
+  // Componente para renderizar una respuesta individual
+  const ReplyItem = ({ reply, level = 0 }: { reply: ReplyType; level?: number }) => {
+    const isEditing = editingReplyId === reply.id;
+    
+    return (
+      <div className={`border-l-2 border-primary/20 pl-4 ${level > 0 ? 'ml-4' : ''}`}>
+        <div className="border-b border-primary/10 pb-4 last:border-b-0">
+          <div className="flex space-x-3">
+            <Avatar className="h-10 w-10 flex-shrink-0">
+              <AvatarFallback className="bg-primary/20 text-primary font-terminal">
+                {reply.author.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="font-terminal font-medium text-primary">
+                  {reply.author}
+                </span>
+                {reply.isAuthor && (
+                  <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-400 text-xs">
+                    AUTOR
+                  </Badge>
+                )}
+                {isAdmin && reply.isReported && (
+                  <Badge variant="outline" className="bg-red-500/10 border-red-500/30 text-red-400 text-xs">
+                    REPORTADO ({reply.reportCount || 1})
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground font-terminal">
+                  {formatDate(reply.createdAt)}
+                </span>
+              </div>
+              
+              {isEditing ? (
+                <div className="space-y-2 mb-3">
+                  <Input
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="font-terminal"
+                  />
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      className="font-terminal text-xs"
+                    >
+                      Guardar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingReplyId(null)}
+                      className="font-terminal text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground font-terminal mb-3">
+                  {reply.content}
+                </p>
+              )}
+              
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleVote(reply.id, 'like')}
+                  className={`font-terminal text-xs ${
+                    reply.userVote === 'like' 
+                      ? 'text-green-400 bg-green-500/10' 
+                      : 'hover:text-green-400'
+                  }`}
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {reply.likes}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleVote(reply.id, 'dislike')}
+                  className={`font-terminal text-xs ${
+                    reply.userVote === 'dislike' 
+                      ? 'text-red-400 bg-red-500/10' 
+                      : 'hover:text-red-400'
+                  }`}
+                >
+                  <ThumbsDown className="h-3 w-3 mr-1" />
+                  {reply.dislikes}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleReplyToReply(reply)}
+                  className="font-terminal text-xs"
+                >
+                  <Reply className="h-3 w-3 mr-1" />
+                  Responder
+                </Button>
+                
+                {/* Botones de moderación (solo admin) */}
+                {isAdmin && showModerationTools && (
+                  <>
+                    {reply.isHidden ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleShowReply(reply.id)}
+                        className="font-terminal text-xs hover:text-green-400"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Mostrar
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleHideReply(reply.id)}
+                        className="font-terminal text-xs hover:text-yellow-400"
+                      >
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Ocultar
+                      </Button>
+                    )}
+                    
+                    {reply.isReported ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUnreportReply(reply.id)}
+                        className="font-terminal text-xs hover:text-green-400"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Quitar Reporte
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReportReply(reply.id)}
+                        className="font-terminal text-xs hover:text-red-400"
+                      >
+                        <Flag className="h-3 w-3 mr-1" />
+                        Reportar
+                      </Button>
+                    )}
+                  </>
+                )}
+                
+                {reply.isAuthor && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditReply(reply)}
+                      className="font-terminal text-xs hover:text-blue-400"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteReply(reply.id)}
+                      className="font-terminal text-xs hover:text-red-400"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Eliminar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Respuestas anidadas */}
+          {reply.replies && reply.replies.length > 0 && (
+            <div className="mt-4">
+              {reply.replies.map((nestedReply) => (
+                <ReplyItem 
+                  key={nestedReply.id} 
+                  reply={nestedReply} 
+                  level={level + 1} 
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -147,6 +416,12 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
                     <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-terminal">
                       {getCategoryLabel(discussion.category)}
                     </Badge>
+                    {activityStats.hasNewActivity && (
+                      <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-400 font-terminal">
+                        <Activity className="h-3 w-3 mr-1" />
+                        ACTIVA
+                      </Badge>
+                    )}
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground font-terminal">
                       <Clock className="h-4 w-4" />
                       <span>{formatDate(discussion.createdAt)}</span>
@@ -161,6 +436,17 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
                     <Share2 className="h-4 w-4 mr-2" />
                     Compartir
                   </Button>
+                  {isAdmin && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="font-terminal"
+                      onClick={() => setShowModerationTools(!showModerationTools)}
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      {showModerationTools ? 'Ocultar' : 'Moderación'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -197,12 +483,18 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
                   </div>
                   <div className="flex items-center space-x-2">
                     <MessageSquare className="h-4 w-4" />
-                    <span>{replies.length} respuestas</span>
+                    <span>{organizedReplies.length} respuestas</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Eye className="h-4 w-4" />
                     <span>{discussion.views || 0} vistas</span>
                   </div>
+                </div>
+                
+                {/* Estadísticas de actividad */}
+                <div className="flex items-center space-x-4 text-sm text-muted-foreground font-terminal">
+                  <span>{activityStats.todayReplies} hoy</span>
+                  <span>{activityStats.weekReplies} esta semana</span>
                 </div>
               </div>
             </CardContent>
@@ -213,8 +505,26 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
             <CardHeader>
               <CardTitle className="font-terminal text-lg text-primary">
                 <Reply className="h-5 w-5 mr-2" />
-                RESPONDER
+                {replyingTo ? `RESPONDER A ${replyingTo.author}` : 'RESPONDER'}
               </CardTitle>
+              {replyingTo && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground font-terminal">
+                    Respondiendo a:
+                  </span>
+                  <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-terminal text-xs">
+                    {replyingTo.content.substring(0, 50)}...
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReplyingTo(null)}
+                    className="font-terminal text-xs"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitReply} className="space-y-4">
@@ -228,7 +538,7 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
                     <Input
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="Escribe tu respuesta..."
+                      placeholder={replyingTo ? `Escribe tu respuesta a ${replyingTo.author}...` : "Escribe tu respuesta..."}
                       className="font-terminal"
                       required
                     />
@@ -247,83 +557,123 @@ const DiscussionDetail = ({ discussion, onBack, onReply }: DiscussionDetailProps
             </CardContent>
           </Card>
 
-          {/* Lista de Respuestas */}
-          <Card className="terminal-card">
+          {/* Búsqueda y Filtros */}
+          <Card className="terminal-card mb-6">
             <CardHeader>
               <CardTitle className="font-terminal text-lg text-primary">
-                <MessageSquare className="h-5 w-5 mr-2" />
-                RESPUESTAS ({replies.length})
+                <Search className="h-5 w-5 mr-2" />
+                BUSCAR Y FILTRAR RESPUESTAS
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {replies.length > 0 ? (
-                <div className="space-y-4">
-                  {replies.map((reply) => (
-                    <div key={reply.id} className="border-b border-primary/10 pb-4 last:border-b-0">
-                      <div className="flex space-x-3">
-                        <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarFallback className="bg-primary/20 text-primary font-terminal">
-                            {reply.author.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-terminal font-medium text-primary">
-                              {reply.author}
-                            </span>
-                            {reply.isAuthor && (
-                              <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-400 text-xs">
-                                AUTOR
-                              </Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground font-terminal">
-                              {formatDate(reply.createdAt)}
-                            </span>
-                          </div>
-                          
-                          <p className="text-muted-foreground font-terminal mb-3">
-                            {reply.content}
-                          </p>
-                          
-                          <div className="flex items-center space-x-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleVote(reply.id, 'like')}
-                              className="font-terminal text-xs hover:text-green-400"
-                            >
-                              <ThumbsUp className="h-3 w-3 mr-1" />
-                              {reply.likes}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleVote(reply.id, 'dislike')}
-                              className="font-terminal text-xs hover:text-red-400"
-                            >
-                              <ThumbsDown className="h-3 w-3 mr-1" />
-                              {reply.dislikes}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="font-terminal text-xs"
-                            >
-                              <Reply className="h-3 w-3 mr-1" />
-                              Responder
-                            </Button>
-                          </div>
-                        </div>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar en respuestas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 font-terminal"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-background border border-primary/20 text-primary font-terminal px-3 py-2 rounded-sm"
+                  >
+                    <option value="date">Por fecha</option>
+                    <option value="votes">Por votos</option>
+                    <option value="relevance">Por relevancia</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Estadísticas de búsqueda */}
+              {searchStats && (
+                <div className="mt-4 p-3 bg-primary/5 rounded-sm">
+                  <p className="text-sm font-terminal text-primary">
+                    Búsqueda: "{searchStats.searchTerm}" - {searchStats.totalMatches} resultados, {searchStats.authorMatches} autores
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Lista de Respuestas */}
+          <Card className="terminal-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-terminal text-lg text-primary">
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  RESPUESTAS ({organizedReplies.length})
+                </CardTitle>
+                
+                {/* Estadísticas de moderación (solo admin) */}
+                {isAdmin && showModerationTools && (
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground font-terminal">
+                    <span>Ocultas: {moderationStats.hiddenCount}</span>
+                    <span>Reportadas: {moderationStats.reportedCount}</span>
+                    <span>Total reportes: {moderationStats.totalReports}</span>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="loading-dots mb-4">
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                  </div>
+                  <p className="text-muted-foreground font-terminal">CARGANDO RESPUESTAS...</p>
+                </div>
+              ) : paginatedReplies.length > 0 ? (
+                <>
+                  <div className="space-y-4">
+                    {paginatedReplies.map((reply) => (
+                      <ReplyItem key={reply.id} reply={reply} />
+                    ))}
+                  </div>
+                  
+                  {/* Paginación */}
+                  {pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-primary/20">
+                      <div className="text-sm text-muted-foreground font-terminal">
+                        Página {pagination.currentPage} de {pagination.totalPages} ({pagination.totalReplies} respuestas)
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(pagination.currentPage - 1)}
+                          disabled={!pagination.hasPrevPage}
+                          className="font-terminal"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Anterior
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(pagination.currentPage + 1)}
+                          disabled={!pagination.hasNextPage}
+                          className="font-terminal"
+                        >
+                          Siguiente
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground font-terminal">
-                    No hay respuestas aún. ¡Sé el primero en responder!
+                    {searchTerm ? 'No se encontraron respuestas para tu búsqueda.' : 'No hay respuestas aún. ¡Sé el primero en responder!'}
                   </p>
                 </div>
               )}
