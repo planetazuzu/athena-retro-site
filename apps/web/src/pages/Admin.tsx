@@ -5,18 +5,18 @@ import { useEffect } from "react";
 import AdminPanel from "@/components/admin/AdminPanel";
 
 const Admin = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirigir si no es admin
   useEffect(() => {
-    if (isAuthenticated && user?.role !== 'admin') {
+    if (user && user.role !== 'admin') {
       navigate('/');
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [user, navigate]);
 
   // Mostrar loading mientras se verifica la autenticación
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

@@ -11,6 +11,10 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@athena/web",
+    "dev:api": "turbo run dev --filter=@athena/api",
+    "dev:full": "turbo run dev --parallel",
+    "start": "turbo run start",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "test": "turbo run test",

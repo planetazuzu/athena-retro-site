@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Aplicación web Athena Pocket
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "4000:80" # Puerto web
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - api
+    networks:
+      - athena-network
+    restart: unless-stopped
+
+  # API Backend
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3001:3001" # Puerto API
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:4000
+      - ADMIN_EMAIL=planetazuzu@gmail.com
+      - ADMIN_PASSWORD=941259018a
+      - JWT_SECRET=production-jwt-secret-change-this
+      - DATABASE_URL=postgresql://athena:password@db:5432/athena_pocket
+    depends_on:
+      - db
+    networks:
+      - athena-network
+    restart: unless-stopped
+
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=athena_pocket
+      - POSTGRES_USER=athena
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - athena-network
+    restart: unless-stopped
+
+  # Redis para cache y sesiones
+  redis:
+    image: redis:7-alpine
+    networks:
+      - athena-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  athena-network:
+    driver: bridge

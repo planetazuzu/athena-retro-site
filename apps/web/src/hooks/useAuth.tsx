@@ -21,10 +21,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Credenciales de admin (en producción esto debería estar en variables de entorno)
+// Credenciales de admin (desde variables de entorno)
 const ADMIN_CREDENTIALS = {
-  email: 'planetazuzu@gmail.com',
-  password: '941259018a'
+  email: import.meta.env.VITE_ADMIN_EMAIL || 'planetazuzu@gmail.com',
+  password: import.meta.env.VITE_ADMIN_PASSWORD || '941259018a'
 };
 
 export const useAuth = () => {

@@ -11,7 +11,7 @@ import { Eye, EyeOff, Lock, Mail, UserPlus, Shield } from "lucide-react";
 const LoginForm = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('planetazuzu@gmail.com'); // Email del admin por defecto
+  const [email, setEmail] = useState(''); // Email del admin
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -165,12 +165,11 @@ const LoginForm = () => {
                     </div>
                   </div>
 
-                  {/* Información de credenciales */}
+                  {/* Información de acceso */}
                   <div className="bg-primary/10 border border-primary/20 rounded-sm p-3">
                     <p className="text-xs text-primary font-terminal">
-                      🔑 <strong>Credenciales de Admin:</strong><br/>
-                      Email: planetazuzu@gmail.com<br/>
-                      Contraseña: 941259018a
+                      🔑 <strong>Acceso de Administrador:</strong><br/>
+                      Contacta al desarrollador para obtener las credenciales
                     </p>
                   </div>
 

@@ -22,13 +22,14 @@ import Terminos from "./pages/Terminos";
 import Privacidad from "./pages/Privacidad";
 import Admin from "./pages/Admin";
 import ComingSoon from "./pages/ComingSoon";
-import PaymentTest from "./pages/PaymentTest";
-import StripeTest from "./pages/StripeTest";
-import PayPalTest from "./pages/PayPalTest";
-import SubscriptionTest from "./pages/SubscriptionTest";
-import AdvancedDonationsTest from "./pages/AdvancedDonationsTest";
-import UserFeaturesTest from "./pages/UserFeaturesTest";
-import AdvancedBlogTest from "./pages/AdvancedBlogTest";
+// Páginas de test comentadas temporalmente para el build
+// import PaymentTest from "./pages/PaymentTest";
+// import StripeTest from "./pages/StripeTest";
+// import PayPalTest from "./pages/PayPalTest";
+// import SubscriptionTest from "./pages/SubscriptionTest";
+// import AdvancedDonationsTest from "./pages/AdvancedDonationsTest";
+// import UserFeaturesTest from "./pages/UserFeaturesTest";
+// import AdvancedBlogTest from "./pages/AdvancedBlogTest";
 import Comunidad from "./pages/Comunidad";
 import LoginForm from "./components/LoginForm";
 import NotFound from "./pages/NotFound";
@@ -70,13 +71,14 @@ const App = () => {
               } />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/app" element={<ComingSoon />} />
-                             <Route path="/payment-test" element={<PaymentTest />} />
-               <Route path="/stripe-test" element={<StripeTest />} />
-               <Route path="/paypal-test" element={<PayPalTest />} />
-               <Route path="/subscription-test" element={<SubscriptionTest />} />
-               <Route path="/donations-test" element={<AdvancedDonationsTest />} />
-               <Route path="/user-features-test" element={<UserFeaturesTest />} />
-               <Route path="/advanced-blog-test" element={<AdvancedBlogTest />} />
+              {/* Páginas de test comentadas temporalmente para el build */}
+              {/* <Route path="/payment-test" element={<PaymentTest />} /> */}
+              {/* <Route path="/stripe-test" element={<StripeTest />} /> */}
+              {/* <Route path="/paypal-test" element={<PayPalTest />} /> */}
+              {/* <Route path="/subscription-test" element={<SubscriptionTest />} /> */}
+              {/* <Route path="/donations-test" element={<AdvancedDonationsTest />} /> */}
+              {/* <Route path="/user-features-test" element={<UserFeaturesTest />} /> */}
+              {/* <Route path="/advanced-blog-test" element={<AdvancedBlogTest />} /> */}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
