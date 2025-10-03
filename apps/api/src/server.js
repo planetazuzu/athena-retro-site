@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Importar Prisma
+import { connectDatabase, checkDatabaseConnection } from './lib/prisma.js';
+
 // Importar rutas
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -69,11 +72,35 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor API ejecutándose en puerto ${PORT}`);
-  console.log(`📱 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5000'}`);
-  console.log(`🔧 Entorno: ${process.env.NODE_ENV || 'development'}`);
-});
+// Función para inicializar la aplicación
+async function startServer() {
+  try {
+    // Verificar conexión a la base de datos
+    console.log('🔍 Verificando conexión a la base de datos...');
+    const isConnected = await checkDatabaseConnection();
+    
+    if (!isConnected) {
+      console.log('⚠️ No se pudo conectar a la base de datos. Verifica tu configuración.');
+      console.log('📝 Asegúrate de configurar la variable DATABASE_URL correctamente.');
+      console.log('💡 Ejemplo: postgresql://usuario:password@tu-servidor.com:5432/athena_pocket');
+    } else {
+      console.log('✅ Base de datos conectada exitosamente');
+    }
+
+    // Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor API ejecutándose en puerto ${PORT}`);
+      console.log(`📱 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5000'}`);
+      console.log(`🔧 Entorno: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🗄️ Base de datos: ${isConnected ? 'Conectada ✅' : 'Desconectada ⚠️'}`);
+    });
+  } catch (error) {
+    console.error('❌ Error iniciando el servidor:', error);
+    process.exit(1);
+  }
+}
+
+// Iniciar la aplicación
+startServer();
 
 export default app;
