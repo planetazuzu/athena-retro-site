@@ -1,0 +1,440 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Athena Pocket Retro Terminal Design System
+All colors MUST be HSL for terminal aesthetic.
+*/
+
+@layer base {
+  :root {
+    /* Terminal Background Colors */
+    --background: 0 0% 5%;
+    --background-secondary: 0 0% 8%;
+    --background-tertiary: 0 0% 12%;
+    --foreground: 120 100% 75%;
+
+    /* Card Components */
+    --card: 0 0% 8%;
+    --card-foreground: 120 100% 75%;
+    --card-border: 120 100% 25%;
+
+    /* Popover Components */
+    --popover: 0 0% 8%;
+    --popover-foreground: 120 100% 75%;
+
+    /* Primary Terminal Green */
+    --primary: 120 100% 50%;
+    --primary-foreground: 0 0% 5%;
+    --primary-glow: 120 100% 75%;
+    --primary-dim: 120 100% 35%;
+
+    /* Secondary Terminal Colors */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 120 100% 75%;
+
+    /* Muted Elements */
+    --muted: 0 0% 15%;
+    --muted-foreground: 120 50% 60%;
+
+    /* Accent Colors */
+    --accent: 120 100% 25%;
+    --accent-foreground: 120 100% 75%;
+
+    /* Error/Warning Colors */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border and Input */
+    --border: 120 100% 25%;
+    --input: 0 0% 15%;
+    --input-border: 120 100% 35%;
+    --ring: 120 100% 50%;
+
+    /* Terminal Effects */
+    --terminal-glow: 120 100% 50%;
+    --terminal-shadow: 0 0 20px hsl(120 100% 50% / 0.5);
+    --cursor-blink: 120 100% 75%;
+    
+    /* Gradients */
+    --gradient-terminal: linear-gradient(135deg, hsl(120 100% 50% / 0.1), hsl(120 100% 25% / 0.1));
+    --gradient-glow: radial-gradient(circle, hsl(120 100% 50% / 0.3) 0%, transparent 70%);
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-mono;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Terminal Typography */
+  .font-terminal {
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  }
+
+  /* Terminal Effects */
+  .terminal-glow {
+    text-shadow: 0 0 10px hsl(var(--terminal-glow));
+    filter: drop-shadow(0 0 5px hsl(var(--terminal-glow) / 0.5));
+  }
+
+  .terminal-border {
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 0 10px hsl(var(--terminal-glow) / 0.3);
+  }
+
+  .terminal-scanlines::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        hsl(120 100% 50% / 0.03) 2px,
+        hsl(120 100% 50% / 0.03) 4px
+      );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Enhanced Terminal Scanlines with CRT effect */
+  .terminal-crt::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.06),
+        rgba(0, 255, 0, 0.02),
+        rgba(0, 0, 255, 0.06)
+      );
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    z-index: 2;
+    animation: flicker 0.15s infinite linear;
+  }
+
+  /* Cursor Animation */
+  .cursor-blink::after {
+    content: '_';
+    color: hsl(var(--cursor-blink));
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Enhanced Typing Animation */
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  .typing-animation {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid hsl(var(--cursor-blink));
+    animation: typing 3s steps(40, end), blink 1s infinite step-end;
+  }
+
+  /* Terminal Button Hover Effects */
+  .terminal-button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .terminal-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary-glow) / 0.2),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  .terminal-button:hover::before {
+    left: 100%;
+  }
+
+  .terminal-button:hover {
+    box-shadow: 
+      0 0 20px hsl(var(--terminal-glow) / 0.6),
+      0 0 40px hsl(var(--terminal-glow) / 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Enhanced Glow Effects */
+  .glow-effect {
+    position: relative;
+  }
+
+  .glow-effect::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+      hsl(var(--primary)), 
+      hsl(var(--primary-glow)), 
+      hsl(var(--primary)), 
+      hsl(var(--primary-dim))
+    );
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .glow-effect:hover::after {
+    opacity: 1;
+    animation: glow-rotate 2s linear infinite;
+  }
+
+  @keyframes glow-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Particle Effects */
+  .particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-100px) translateX(50px);
+      opacity: 0.8;
+    }
+  }
+
+  /* Enhanced Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+    border: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary-dim));
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+
+  /* Flicker Animation for CRT effect */
+  @keyframes flicker {
+    0% { opacity: 0.15795; }
+    5% { opacity: 0.31511; }
+    10% { opacity: 0.94554; }
+    15% { opacity: 0.2469; }
+    20% { opacity: 0.62031; }
+    25% { opacity: 0.0293; }
+    30% { opacity: 0.00899; }
+    35% { opacity: 0.5344; }
+    40% { opacity: 0.12778; }
+    45% { opacity: 0.52042; }
+    50% { opacity: 0.3823; }
+    55% { opacity: 0.2198; }
+    60% { opacity: 0.9383; }
+    65% { opacity: 0.86615; }
+    70% { opacity: 0.68695; }
+    75% { opacity: 0.55749; }
+    80% { opacity: 0.96984; }
+    85% { opacity: 0.0371; }
+    90% { opacity: 0.13207; }
+    95% { opacity: 0.51837; }
+    100% { opacity: 0.18566; }
+  }
+
+  /* Enhanced Card Hover Effects */
+  .terminal-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .terminal-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    background: linear-gradient(45deg, 
+      hsl(var(--primary) / 0.1), 
+      hsl(var(--primary-glow) / 0.1), 
+      hsl(var(--primary) / 0.1)
+    ) border-box;
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) padding-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .terminal-card:hover::before {
+    opacity: 1;
+  }
+
+  .terminal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 10px 25px hsl(var(--primary) / 0.2),
+      0 0 20px hsl(var(--primary) / 0.1);
+  }
+
+  /* Loading Animation */
+  .loading-dots {
+    display: inline-block;
+  }
+
+  .loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+  }
+
+  @keyframes loading-dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+  }
+
+  /* Enhanced Focus States */
+  .terminal-focus:focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
+  }
+
+  /* Responsive Improvements */
+  @media (max-width: 768px) {
+    .terminal-glow {
+      text-shadow: 0 0 5px hsl(var(--terminal-glow));
+    }
+    
+    .terminal-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px hsl(var(--terminal-glow) / 0.4);
+    }
+  }
+}
